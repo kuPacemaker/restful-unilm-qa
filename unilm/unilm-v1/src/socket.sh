@@ -1,12 +1,12 @@
 SRC=~/code/unilm/unilm-v1/src
 DATA_DIR=${SRC}/data/test
-MODEL_RECOVER_PATH=${SRC}/finetuned/qg_model.bin
+MODEL_RECOVER_PATH=${SRC}/finetuned/genqa-model.bin
 EVAL_SPLIT=test
 TEMP_DIR=${SRC}/temp
 export PYTORCH_PRETRAINED_BERT_CACHE=/${TEMP_DIR}/bert-cased-pretrained-cache
 # run decoding
 python biunilm/qgsocket.py --bert_model bert-large-cased --new_segment_ids --mode s2s \
-  --input_file ${DATA_DIR}/words.txt --split ${EVAL_SPLIT} \
+  --input_file ${DATA_DIR}/dev.pq.txt --split ${EVAL_SPLIT} \
   --model_recover_path ${MODEL_RECOVER_PATH} \
   --max_seq_length 512 --max_tgt_length 48 \
   --batch_size 16 --beam_size 1 --length_penalty 0 \
