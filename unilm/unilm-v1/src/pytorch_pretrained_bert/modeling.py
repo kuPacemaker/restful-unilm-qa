@@ -1409,7 +1409,7 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
         output_shape = list(token_type_ids.size())
         output_length = output_shape[1]
 
-        output_ids = []
+        scores, output_ids = [], []
         prev_embedding = None
         prev_encoded_layers = None
         curr_ids = input_ids
@@ -1446,7 +1446,8 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
             if self.not_predict_set:
                 for token_id in self.not_predict_set:
                     prediction_scores[:, :, token_id].fill_(-10000.0)
-            _, max_ids = torch.max(prediction_scores, dim=-1)
+            score, max_ids = torch.max(prediction_scores, dim=-1)
+            scores.append(score)
             output_ids.append(max_ids)
 
             if self.pos_shift:
@@ -1475,7 +1476,7 @@ class BertForSeq2SeqDecoder(PreTrainedBertModel):
             curr_ids = max_ids
             next_pos += 1
 
-        return torch.cat(output_ids, dim=1)
+        return torch.cat(output_ids, dim=1), torch.cat(scores, dim=1)
 
     def beam_search(self, input_ids, token_type_ids, position_ids, attention_mask, task_idx=None, mask_qkv=None):
         input_shape = list(input_ids.size())

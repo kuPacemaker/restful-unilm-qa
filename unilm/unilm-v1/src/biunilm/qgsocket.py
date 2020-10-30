@@ -41,6 +41,8 @@ def detokenize(tk_list):
             r_list.append(tk)
     return r_list
 
+def sco(str1, str2):
+    return "{} [SCO] {}".format(str1, str2)
 
 def ascii_print(text):
     text = text.encode("ascii", "ignore")
@@ -251,7 +253,7 @@ def main():
                         batch = [
                             t.to(device) if t is not None else None for t in batch]
                         input_ids, token_type_ids, position_ids, input_mask, mask_qkv, task_idx = batch
-                        traces = model(input_ids, token_type_ids,
+                        traces, scores = model(input_ids, token_type_ids,
                                     position_ids, input_mask, task_idx=task_idx, mask_qkv=mask_qkv)
                         if args.beam_size > 1:
                             traces = {k: v.tolist() for k, v in traces.items()}
@@ -262,17 +264,16 @@ def main():
                         qg_result = []
                         for i in range(len(buf)):
                             w_ids = output_ids[i]
+                            w_scores = scores[i]
                             output_buf = tokenizer.convert_ids_to_tokens(w_ids)
                             output_tokens = []
-                            for t in output_buf:
+                            for pos, t in enumerate(output_buf):
                                 if t in ("[SEP]", "[PAD]"):
                                     break
                                 output_tokens.append(t)
+                            avg_score = (sum(w_scores[:pos]) / pos).item() if pos > 0 else 0.0
                             output_sequence = ' '.join(detokenize(output_tokens))
-                            qg_result.append(output_sequence)
-                            if args.need_score_traces:
-                                score_trace_list[buf_id[i]] = {
-                                    'scores': traces['scores'][i], 'wids': traces['wids'][i], 'ptrs': traces['ptrs'][i]}
+                            qg_result.append(sco(output_sequence, str(avg_score)))
                         cs.sendall(ascii_print('\n'.join(qg_result)))
             cs.close()
             
